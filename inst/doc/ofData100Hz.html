@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+
+<meta charset="utf-8" />
+<meta name="generator" content="pandoc" />
+<meta http-equiv="X-UA-Compatible" content="IE=EDGE" />
+
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+
+<meta name="author" content="Sergey Sandler" />
+
+<meta name="date" content="2022-12-19" />
+
+<title>100 Hz CSV Processing Examples</title>
+
+<script>// Pandoc 2.9 adds attributes on both header and div. We remove the former (to
+// be compatible with the behavior of Pandoc < 2.8).
+document.addEventListener('DOMContentLoaded', function(e) {
+  var hs = document.querySelectorAll("div.section[class*='level'] > :first-child");
+  var i, h, a;
+  for (i = 0; i < hs.length; i++) {
+    h = hs[i];
+    if (!/^h[1-6]$/i.test(h.tagName)) continue;  // it should be a header h1-h6
+    a = h.attributes;
+    while (a.length > 0) h.removeAttribute(a[0].name);
+  }
+});
+</script>
+
+<style type="text/css">
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+span.underline{text-decoration: underline;}
+div.column{display: inline-block; vertical-align: top; width: 50%;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+</style>
+
+
+
+<style type="text/css">
+code {
+white-space: pre;
+}
+.sourceCode {
+overflow: visible;
+}
+</style>
+<style type="text/css" data-origin="pandoc">
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+{ counter-reset: source-line 0; }
+pre.numberSource code > span
+{ position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+{ content: counter(source-line);
+position: relative; left: -1em; text-align: right; vertical-align: baseline;
+border: none; display: inline-block;
+-webkit-touch-callout: none; -webkit-user-select: none;
+-khtml-user-select: none; -moz-user-select: none;
+-ms-user-select: none; user-select: none;
+padding: 0 4px; width: 4em;
+color: #aaaaaa;
+}
+pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa; padding-left: 4px; }
+div.sourceCode
+{ }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+code span.al { color: #ff0000; font-weight: bold; } 
+code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.at { color: #7d9029; } 
+code span.bn { color: #40a070; } 
+code span.bu { color: #008000; } 
+code span.cf { color: #007020; font-weight: bold; } 
+code span.ch { color: #4070a0; } 
+code span.cn { color: #880000; } 
+code span.co { color: #60a0b0; font-style: italic; } 
+code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.do { color: #ba2121; font-style: italic; } 
+code span.dt { color: #902000; } 
+code span.dv { color: #40a070; } 
+code span.er { color: #ff0000; font-weight: bold; } 
+code span.ex { } 
+code span.fl { color: #40a070; } 
+code span.fu { color: #06287e; } 
+code span.im { color: #008000; font-weight: bold; } 
+code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.kw { color: #007020; font-weight: bold; } 
+code span.op { color: #666666; } 
+code span.ot { color: #007020; } 
+code span.pp { color: #bc7a00; } 
+code span.sc { color: #4070a0; } 
+code span.ss { color: #bb6688; } 
+code span.st { color: #4070a0; } 
+code span.va { color: #19177c; } 
+code span.vs { color: #4070a0; } 
+code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } 
+</style>
+<script>
+// apply pandoc div.sourceCode style to pre.sourceCode instead
+(function() {
+  var sheets = document.styleSheets;
+  for (var i = 0; i < sheets.length; i++) {
+    if (sheets[i].ownerNode.dataset["origin"] !== "pandoc") continue;
+    try { var rules = sheets[i].cssRules; } catch (e) { continue; }
+    var j = 0;
+    while (j < rules.length) {
+      var rule = rules[j];
+      // check if there is a div.sourceCode rule
+      if (rule.type !== rule.STYLE_RULE || rule.selectorText !== "div.sourceCode") {
+        j++;
+        continue;
+      }
+      var style = rule.style.cssText;
+      // check if color or background-color is set
+      if (rule.style.color === '' && rule.style.backgroundColor === '') {
+        j++;
+        continue;
+      }
+      // replace div.sourceCode by a pre.sourceCode rule
+      sheets[i].deleteRule(j);
+      sheets[i].insertRule('pre.sourceCode{' + style + '}', j);
+    }
+  }
+})();
+</script>
+
+
+
+
+<style type="text/css">body {
+background-color: #fff;
+margin: 1em auto;
+max-width: 700px;
+overflow: visible;
+padding-left: 2em;
+padding-right: 2em;
+font-family: "Open Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
+font-size: 14px;
+line-height: 1.35;
+}
+#TOC {
+clear: both;
+margin: 0 0 10px 10px;
+padding: 4px;
+width: 400px;
+border: 1px solid #CCCCCC;
+border-radius: 5px;
+background-color: #f6f6f6;
+font-size: 13px;
+line-height: 1.3;
+}
+#TOC .toctitle {
+font-weight: bold;
+font-size: 15px;
+margin-left: 5px;
+}
+#TOC ul {
+padding-left: 40px;
+margin-left: -1.5em;
+margin-top: 5px;
+margin-bottom: 5px;
+}
+#TOC ul ul {
+margin-left: -2em;
+}
+#TOC li {
+line-height: 16px;
+}
+table {
+margin: 1em auto;
+border-width: 1px;
+border-color: #DDDDDD;
+border-style: outset;
+border-collapse: collapse;
+}
+table th {
+border-width: 2px;
+padding: 5px;
+border-style: inset;
+}
+table td {
+border-width: 1px;
+border-style: inset;
+line-height: 18px;
+padding: 5px 5px;
+}
+table, table th, table td {
+border-left-style: none;
+border-right-style: none;
+}
+table thead, table tr.even {
+background-color: #f7f7f7;
+}
+p {
+margin: 0.5em 0;
+}
+blockquote {
+background-color: #f6f6f6;
+padding: 0.25em 0.75em;
+}
+hr {
+border-style: solid;
+border: none;
+border-top: 1px solid #777;
+margin: 28px 0;
+}
+dl {
+margin-left: 0;
+}
+dl dd {
+margin-bottom: 13px;
+margin-left: 13px;
+}
+dl dt {
+font-weight: bold;
+}
+ul {
+margin-top: 0;
+}
+ul li {
+list-style: circle outside;
+}
+ul ul {
+margin-bottom: 0;
+}
+pre, code {
+background-color: #f7f7f7;
+border-radius: 3px;
+color: #333;
+white-space: pre-wrap; 
+}
+pre {
+border-radius: 3px;
+margin: 5px 0px 10px 0px;
+padding: 10px;
+}
+pre:not([class]) {
+background-color: #f7f7f7;
+}
+code {
+font-family: Consolas, Monaco, 'Courier New', monospace;
+font-size: 85%;
+}
+p > code, li > code {
+padding: 2px 0px;
+}
+div.figure {
+text-align: center;
+}
+img {
+background-color: #FFFFFF;
+padding: 2px;
+border: 1px solid #DDDDDD;
+border-radius: 3px;
+border: 1px solid #CCCCCC;
+margin: 0 5px;
+}
+h1 {
+margin-top: 0;
+font-size: 35px;
+line-height: 40px;
+}
+h2 {
+border-bottom: 4px solid #f7f7f7;
+padding-top: 10px;
+padding-bottom: 2px;
+font-size: 145%;
+}
+h3 {
+border-bottom: 2px solid #f7f7f7;
+padding-top: 10px;
+font-size: 120%;
+}
+h4 {
+border-bottom: 1px solid #f7f7f7;
+margin-left: 8px;
+font-size: 105%;
+}
+h5, h6 {
+border-bottom: 1px solid #ccc;
+font-size: 105%;
+}
+a {
+color: #0033dd;
+text-decoration: none;
+}
+a:hover {
+color: #6666ff; }
+a:visited {
+color: #800080; }
+a:visited:hover {
+color: #BB00BB; }
+a[href^="http:"] {
+text-decoration: underline; }
+a[href^="https:"] {
+text-decoration: underline; }
+
+code > span.kw { color: #555; font-weight: bold; } 
+code > span.dt { color: #902000; } 
+code > span.dv { color: #40a070; } 
+code > span.bn { color: #d14; } 
+code > span.fl { color: #d14; } 
+code > span.ch { color: #d14; } 
+code > span.st { color: #d14; } 
+code > span.co { color: #888888; font-style: italic; } 
+code > span.ot { color: #007020; } 
+code > span.al { color: #ff0000; font-weight: bold; } 
+code > span.fu { color: #900; font-weight: bold; } 
+code > span.er { color: #a61717; background-color: #e3d2d2; } 
+</style>
+
+
+
+
+</head>
+
+<body>
+
+
+
+
+<h1 class="title toc-ignore">100 Hz CSV Processing Examples</h1>
+<h4 class="author">Sergey Sandler</h4>
+<h4 class="date">2022-12-19</h4>
+
+
+
+<p><a href="http://catapultr.catapultsports.com" class="uri">http://catapultr.catapultsports.com</a> - the catapultR
+package home.</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(catapultR)</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="fu">suppressMessages</span>(<span class="fu">suppressWarnings</span>(<span class="fu">library</span>(dplyr)))</span></code></pre></div>
+<div id="load-and-display-100-hz-csv" class="section level2">
+<h2>Load and display 100 Hz CSV</h2>
+<div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>sCSV <span class="ot">&lt;-</span> <span class="fu">ofDataFileCSV</span>()</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>hiFreq <span class="ot">&lt;-</span> <span class="fu">read_CATcsv</span>(sCSV)</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>df <span class="ot">&lt;-</span> hiFreq<span class="sc">$</span>data</span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> (<span class="fu">suppressMessages</span>(<span class="fu">suppressWarnings</span>(<span class="fu">require</span>(<span class="st">&quot;ggplot2&quot;</span>))))</span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>{</span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>    g <span class="ot">&lt;-</span> <span class="fu">ggplot</span>(df, <span class="fu">aes</span>(<span class="fu">seq_len</span>(<span class="fu">NROW</span>(df)))) <span class="sc">+</span> <span class="fu">geom_line</span>(<span class="fu">aes</span>(<span class="at">y=</span>RawPlayerLoad)) <span class="sc">+</span> <span class="fu">labs</span>(<span class="at">x =</span> <span class="st">&quot;ticks (cs)&quot;</span>, <span class="at">y =</span> <span class="st">&quot;Smoothed PL&quot;</span>)</span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>    <span class="fu">plot</span>(g)</span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+<p><img src="data:image/png;base64,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" /><!-- --></p>
+</div>
+
+
+
+<!-- code folding -->
+
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+</body>
+</html>
